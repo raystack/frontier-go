@@ -1,0 +1,59 @@
+package pkg
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	shieldv1beta1 "github.com/odpf/shield/proto/v1beta1"
+	"net/http"
+	"net/url"
+	"strings"
+)
+
+// CheckAccess uses shield api to check if user has access to perform action on resource
+func CheckAccess(ctx context.Context, client HTTPClient, shieldHost *url.URL, headers http.Header,
+	resourceID string, permission string) (bool, error) {
+	objectNamespace, objectID := SplitResourceID(resourceID)
+	requestBodyBytes, err := json.Marshal(&shieldv1beta1.CheckResourcePermissionRequest{
+		ObjectId:        objectID,
+		ObjectNamespace: objectNamespace,
+		Permission:      permission,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	// send the request to auth server
+	checkAccessRequest, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		shieldHost.ResolveReference(&url.URL{Path: CheckAccessPath}).String(),
+		bytes.NewBuffer(requestBodyBytes),
+	)
+	if err != nil {
+		return false, err
+	}
+	checkAccessRequest.Header = headers
+	resp, err := client.Do(checkAccessRequest)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	// check if action allowed
+	if resp.StatusCode != http.StatusOK {
+		return false, nil
+	}
+	checkRequestResponse := &shieldv1beta1.CheckResourcePermissionResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(checkRequestResponse); err != nil {
+		return false, err
+	}
+	return checkRequestResponse.Status, nil
+}
+
+// SplitResourceID splits resourceID into namespace and id
+func SplitResourceID(resourceID string) (string, string) {
+	split := strings.Split(resourceID, ":")
+	if len(split) != 2 {
+		return "", ""
+	}
+	return split[0], split[1]
+}
