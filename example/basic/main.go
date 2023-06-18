@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/odpf/shield-go/middleware"
+	"github.com/raystack/shield-go/middleware"
 	"log"
 	"net/http"
 	"net/url"
@@ -34,9 +34,9 @@ func main() {
 				Path:   "/ping",
 				Method: http.MethodGet,
 			}: func(r *http.Request) middleware.ResourceControl {
-				projectID := r.URL.Query().Get("project_id")
+				organizationID := r.URL.Query().Get("org_id")
 				return middleware.ResourceControl{
-					ResourceID: fmt.Sprintf("project:%s", projectID),
+					Resource:   fmt.Sprintf("organization:%s", organizationID),
 					Permission: "get",
 				}
 			},

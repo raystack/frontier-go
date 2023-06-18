@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/lestrrat-go/jwx/v2/jwk"
-	"github.com/odpf/shield-go/pkg"
+	"github.com/raystack/shield-go/pkg"
 	"net/http"
 	"net/url"
 	"os"

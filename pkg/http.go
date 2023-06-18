@@ -3,14 +3,14 @@ package pkg
 import (
 	"context"
 	"github.com/lestrrat-go/jwx/v2/jwk"
-	"github.com/odpf/shield/pkg/server/consts"
 	"net/http"
 )
 
 const (
-	CurrentUserProfilePath = "/v1beta1/users/self"
-	CheckAccessPath        = "/v1beta1/check"
-	JWKSAccessPath         = consts.JWKSHandlerPath
+	CurrentUserProfilePath   = "/v1beta1/users/self"
+	CheckAccessPath          = "/v1beta1/check"
+	ServiceUserPublicKeyPath = "/v1beta1/serviceusers/%s/keys/%s"
+	JWKSAccessPath           = "/.well-known/jwks.json"
 )
 
 type HTTPClient interface {

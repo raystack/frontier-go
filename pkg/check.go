@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	shieldv1beta1 "github.com/odpf/shield/proto/v1beta1"
+	shieldv1beta1 "github.com/raystack/shield/proto/v1beta1"
 	"net/http"
 	"net/url"
 	"strings"
@@ -13,11 +13,9 @@ import (
 // CheckAccess uses shield api to check if user has access to perform action on resource
 func CheckAccess(ctx context.Context, client HTTPClient, shieldHost *url.URL, headers http.Header,
 	resourceID string, permission string) (bool, error) {
-	objectNamespace, objectID := SplitResourceID(resourceID)
 	requestBodyBytes, err := json.Marshal(&shieldv1beta1.CheckResourcePermissionRequest{
-		ObjectId:        objectID,
-		ObjectNamespace: objectNamespace,
-		Permission:      permission,
+		Resource:   resourceID,
+		Permission: permission,
 	})
 	if err != nil {
 		return false, err

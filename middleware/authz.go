@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"github.com/odpf/shield-go/pkg"
-	shieldv1beta1 "github.com/odpf/shield/proto/v1beta1"
+	"github.com/raystack/shield-go/pkg"
+	shieldv1beta1 "github.com/raystack/shield/proto/v1beta1"
 	"net/http"
 )
 
@@ -14,9 +14,9 @@ type ResourcePath struct {
 type ResourceControlFunc func(*http.Request) ResourceControl
 
 type ResourceControl struct {
-	// ResourceID should be in the form of "object_namespace:object_id"
+	// Resource should be in the form of "object_namespace:object_id"
 	// for e.g. "project:07d00b42-7d5a-46b4-9d57-dda3fb7721b9"
-	ResourceID string
+	Resource   string
 	Permission string
 }
 
@@ -42,7 +42,7 @@ func (ea *AuthHandler) WithAuthorization(base http.Handler) http.HandlerFunc {
 			}
 		}
 
-		allowed, err := pkg.CheckAccess(r.Context(), ea.httpClient, ea.shieldHost, r.Header, rc.ResourceID, rc.Permission)
+		allowed, err := pkg.CheckAccess(r.Context(), ea.httpClient, ea.shieldHost, r.Header, rc.Resource, rc.Permission)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
