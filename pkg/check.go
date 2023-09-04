@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	shieldv1beta1 "github.com/raystack/shield/proto/v1beta1"
+	frontierv1beta1 "github.com/raystack/frontier/proto/v1beta1"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
-// CheckAccess uses shield api to check if user has access to perform action on resource
-func CheckAccess(ctx context.Context, client HTTPClient, shieldHost *url.URL, headers http.Header,
+// CheckAccess uses frontier api to check if user has access to perform action on resource
+func CheckAccess(ctx context.Context, client HTTPClient, frontierHost *url.URL, headers http.Header,
 	resourceID string, permission string) (bool, error) {
-	requestBodyBytes, err := json.Marshal(&shieldv1beta1.CheckResourcePermissionRequest{
+	requestBodyBytes, err := json.Marshal(&frontierv1beta1.CheckResourcePermissionRequest{
 		Resource:   resourceID,
 		Permission: permission,
 	})
@@ -23,7 +23,7 @@ func CheckAccess(ctx context.Context, client HTTPClient, shieldHost *url.URL, he
 
 	// send the request to auth server
 	checkAccessRequest, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		shieldHost.ResolveReference(&url.URL{Path: CheckAccessPath}).String(),
+		frontierHost.ResolveReference(&url.URL{Path: CheckAccessPath}).String(),
 		bytes.NewBuffer(requestBodyBytes),
 	)
 	if err != nil {
@@ -40,7 +40,7 @@ func CheckAccess(ctx context.Context, client HTTPClient, shieldHost *url.URL, he
 	if resp.StatusCode != http.StatusOK {
 		return false, nil
 	}
-	checkRequestResponse := &shieldv1beta1.CheckResourcePermissionResponse{}
+	checkRequestResponse := &frontierv1beta1.CheckResourcePermissionResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(checkRequestResponse); err != nil {
 		return false, err
 	}

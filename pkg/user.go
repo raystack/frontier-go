@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jwt"
-	"github.com/raystack/shield/pkg/server/consts"
-	shieldv1beta1 "github.com/raystack/shield/proto/v1beta1"
+	"github.com/raystack/frontier/pkg/server/consts"
+	frontierv1beta1 "github.com/raystack/frontier/proto/v1beta1"
 	"net/http"
 	"net/url"
 	"strings"
@@ -18,7 +18,7 @@ const (
 	DefaultSessionID       = consts.SessionRequestKey
 )
 
-func GetAuthenticatedUser(r *http.Request, httpClient HTTPClient, shieldHost *url.URL, shieldKeySet jwk.Set) (*shieldv1beta1.User, map[string]any, string, error) {
+func GetAuthenticatedUser(r *http.Request, httpClient HTTPClient, frontierHost *url.URL, frontierKeySet jwk.Set) (*frontierv1beta1.User, map[string]any, string, error) {
 	// check if context token is present
 	userToken := strings.TrimSpace(r.Header.Get(DefaultUserTokenHeader))
 	authHeader := r.Header.Get("authorization")
@@ -30,7 +30,7 @@ func GetAuthenticatedUser(r *http.Request, httpClient HTTPClient, shieldHost *ur
 	}
 	if userToken != "" {
 		// if present, verify token
-		claims, err := GetTokenClaims(r.Context(), httpClient, shieldHost, shieldKeySet, []byte(userToken))
+		claims, err := GetTokenClaims(r.Context(), httpClient, frontierHost, frontierKeySet, []byte(userToken))
 		if err != nil {
 			return nil, nil, "", err
 		}
@@ -43,22 +43,22 @@ func GetAuthenticatedUser(r *http.Request, httpClient HTTPClient, shieldHost *ur
 		return nil, nil, "", ErrInvalidHeader
 	}
 	// going via session route is slower then token route, but it also fetches full user profile
-	u, userToken, err := GetUserProfile(r.Context(), httpClient, shieldHost, r.Header)
+	u, userToken, err := GetUserProfile(r.Context(), httpClient, frontierHost, r.Header)
 	if err != nil {
 		return nil, nil, "", fmt.Errorf("%s : %w", ErrInvalidSession.Error(), err)
 	}
-	claims, err := GetTokenClaims(r.Context(), httpClient, shieldHost, shieldKeySet, []byte(userToken))
+	claims, err := GetTokenClaims(r.Context(), httpClient, frontierHost, frontierKeySet, []byte(userToken))
 	if err != nil {
 		return nil, nil, "", fmt.Errorf("%s : %w", ErrInvalidSession.Error(), err)
 	}
 	return u, claims, userToken, nil
 }
 
-// GetTokenClaims parse & verify jwt with shield public keys or user public keys
-func GetTokenClaims(ctx context.Context, httpClient HTTPClient, shieldHost *url.URL, shieldKeySet jwk.Set, userToken []byte) (map[string]any, error) {
-	var keySet = shieldKeySet
+// GetTokenClaims parse & verify jwt with frontier public keys or user public keys
+func GetTokenClaims(ctx context.Context, httpClient HTTPClient, frontierHost *url.URL, frontierKeySet jwk.Set, userToken []byte) (map[string]any, error) {
+	var keySet = frontierKeySet
 
-	// check if token is created by shield or user
+	// check if token is created by frontier or user
 	insecureToken, err := jwt.ParseInsecure(userToken)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", ErrInvalidToken.Error(), err)
@@ -69,7 +69,7 @@ func GetTokenClaims(ctx context.Context, httpClient HTTPClient, shieldHost *url.
 		keyUrl := fmt.Sprintf(ServiceUserPublicKeyPath, insecureToken.Subject(), kid)
 
 		// TODO(kushsharma): cache user public keys
-		userKeyResp, err := httpClient.Get(shieldHost.ResolveReference(&url.URL{Path: keyUrl}).String())
+		userKeyResp, err := httpClient.Get(frontierHost.ResolveReference(&url.URL{Path: keyUrl}).String())
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch user public keys: %w", err)
 		}
@@ -92,8 +92,8 @@ func GetTokenClaims(ctx context.Context, httpClient HTTPClient, shieldHost *url.
 	return tokenClaims, nil
 }
 
-func GetUserFromClaims(claims map[string]any) *shieldv1beta1.User {
-	u := &shieldv1beta1.User{
+func GetUserFromClaims(claims map[string]any) *frontierv1beta1.User {
+	u := &frontierv1beta1.User{
 		Id: claims["sub"].(string),
 	}
 	if val, ok := claims["email"]; ok {
@@ -105,10 +105,10 @@ func GetUserFromClaims(claims map[string]any) *shieldv1beta1.User {
 	return u
 }
 
-// GetUserProfile fetches profile of authorized user from shield server
-func GetUserProfile(ctx context.Context, client HTTPClient, shieldHost *url.URL, headers http.Header) (*shieldv1beta1.User, string, error) {
+// GetUserProfile fetches profile of authorized user from frontier server
+func GetUserProfile(ctx context.Context, client HTTPClient, frontierHost *url.URL, headers http.Header) (*frontierv1beta1.User, string, error) {
 	getUserRequest, err := http.NewRequestWithContext(ctx, http.MethodGet,
-		shieldHost.ResolveReference(&url.URL{Path: CurrentUserProfilePath}).String(), nil)
+		frontierHost.ResolveReference(&url.URL{Path: CurrentUserProfilePath}).String(), nil)
 	if err != nil {
 		return nil, "", err
 	}
@@ -122,7 +122,7 @@ func GetUserProfile(ctx context.Context, client HTTPClient, shieldHost *url.URL,
 	if resp.StatusCode != http.StatusOK {
 		return nil, "", ErrInternalServer
 	}
-	currentUserResp := &shieldv1beta1.GetCurrentUserResponse{}
+	currentUserResp := &frontierv1beta1.GetCurrentUserResponse{}
 	if err := json.NewDecoder(resp.Body).Decode(&currentUserResp); err != nil {
 		return nil, "", err
 	}

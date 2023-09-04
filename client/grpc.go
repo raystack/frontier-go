@@ -2,7 +2,7 @@ package client
 
 import (
 	"context"
-	shieldv1beta1 "github.com/raystack/shield/proto/v1beta1"
+	frontierv1beta1 "github.com/raystack/frontier/proto/v1beta1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
@@ -32,7 +32,7 @@ func GetHeadersAsMetadata(r *http.Request) metadata.MD {
 	return md
 }
 
-func CreateBaseClient(ctx context.Context, host string, opts ...grpc.DialOption) (shieldv1beta1.ShieldServiceClient, func(), error) {
+func CreateBaseClient(ctx context.Context, host string, opts ...grpc.DialOption) (frontierv1beta1.FrontierServiceClient, func(), error) {
 	dialTimeoutCtx, dialCancel := context.WithTimeout(ctx, DialTimeout)
 	conn, err := grpc.DialContext(dialTimeoutCtx, host, opts...)
 	if err != nil {
@@ -44,12 +44,12 @@ func CreateBaseClient(ctx context.Context, host string, opts ...grpc.DialOption)
 		conn.Close()
 	}
 
-	client := shieldv1beta1.NewShieldServiceClient(conn)
-	client.GetCurrentUser(ctx, &shieldv1beta1.GetCurrentUserRequest{}, grpc.Header(&metadata.MD{}))
+	client := frontierv1beta1.NewFrontierServiceClient(conn)
+	client.GetCurrentUser(ctx, &frontierv1beta1.GetCurrentUserRequest{}, grpc.Header(&metadata.MD{}))
 	return client, cancel, nil
 }
 
-func CreateAdminClient(ctx context.Context, host string, opts ...grpc.DialOption) (shieldv1beta1.AdminServiceClient, func(), error) {
+func CreateAdminClient(ctx context.Context, host string, opts ...grpc.DialOption) (frontierv1beta1.AdminServiceClient, func(), error) {
 	dialTimeoutCtx, dialCancel := context.WithTimeout(ctx, DialTimeout)
 	conn, err := grpc.DialContext(dialTimeoutCtx, host, opts...)
 	if err != nil {
@@ -61,6 +61,6 @@ func CreateAdminClient(ctx context.Context, host string, opts ...grpc.DialOption
 		conn.Close()
 	}
 
-	client := shieldv1beta1.NewAdminServiceClient(conn)
+	client := frontierv1beta1.NewAdminServiceClient(conn)
 	return client, cancel, nil
 }

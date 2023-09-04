@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/raystack/shield-go/middleware"
+	"github.com/raystack/frontier-go/middleware"
 	"log"
 	"net/http"
 	"net/url"
@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	addr                  = ":12000"
-	shieldRESTEndpoint, _ = url.Parse("http://localhost:7400")
+	addr                    = ":12000"
+	frontierRESTEndpoint, _ = url.Parse("http://localhost:7400")
 )
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 	}))
 
 	authHandler, err := middleware.NewAuthHandler(
-		middleware.WithRESTEndpoint(shieldRESTEndpoint),
+		middleware.WithRESTEndpoint(frontierRESTEndpoint),
 		middleware.WithHTTPClient(http.DefaultClient),
 		middleware.WithResourceControlMapping(map[middleware.ResourcePath]middleware.ResourceControlFunc{
 			{

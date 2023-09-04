@@ -18,7 +18,7 @@ type HTTPClient interface {
 	Get(string) (*http.Response, error)
 }
 
-type ShieldJWKCache interface {
+type FrontierJWKCache interface {
 	// Get returns jwks set
 	Get(ctx context.Context) (jwk.Set, error)
 	Refresh(ctx context.Context) (jwk.Set, error)

@@ -3,7 +3,7 @@ package pkg
 import "errors"
 
 var (
-	ErrMissingHost    = errors.New("missing shield host")
+	ErrMissingHost    = errors.New("missing frontier host")
 	ErrInvalidHeader  = errors.New("invalid auth header")
 	ErrInvalidToken   = errors.New("failed to verify a valid token")
 	ErrJWKsFetch      = errors.New("failed to fetch jwks")

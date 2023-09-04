@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"github.com/raystack/shield-go/pkg"
-	shieldv1beta1 "github.com/raystack/shield/proto/v1beta1"
+	"github.com/raystack/frontier-go/pkg"
+	frontierv1beta1 "github.com/raystack/frontier/proto/v1beta1"
 	"net/http"
 )
 
@@ -23,7 +23,7 @@ type ResourceControl struct {
 func (ea *AuthHandler) WithAuthorization(base http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get user from context
-		_, ok := r.Context().Value(AuthenticatedUserContextKey).(*shieldv1beta1.User)
+		_, ok := r.Context().Value(AuthenticatedUserContextKey).(*frontierv1beta1.User)
 		if !ok {
 			http.Error(w, "user not found", http.StatusUnauthorized)
 			return
@@ -42,7 +42,7 @@ func (ea *AuthHandler) WithAuthorization(base http.Handler) http.HandlerFunc {
 			}
 		}
 
-		allowed, err := pkg.CheckAccess(r.Context(), ea.httpClient, ea.shieldHost, r.Header, rc.Resource, rc.Permission)
+		allowed, err := pkg.CheckAccess(r.Context(), ea.httpClient, ea.frontierHost, r.Header, rc.Resource, rc.Permission)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

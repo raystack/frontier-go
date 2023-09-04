@@ -11,8 +11,8 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"github.com/raystack/shield-go/pkg"
-	shieldv1beta1 "github.com/raystack/shield/proto/v1beta1"
+	"github.com/raystack/frontier-go/pkg"
+	frontierv1beta1 "github.com/raystack/frontier/proto/v1beta1"
 	"google.golang.org/protobuf/encoding/protojson"
 	"io"
 	"net/http"
@@ -26,7 +26,7 @@ var (
 )
 
 func main() {
-	credential := &shieldv1beta1.KeyCredential{}
+	credential := &frontierv1beta1.KeyCredential{}
 	if err := protojson.Unmarshal(serviceUserKey, credential); err != nil {
 		panic(err)
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/lestrrat-go/jwx/v2/jwk"
-	"github.com/raystack/shield-go/pkg"
+	"github.com/raystack/frontier-go/pkg"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	RestEndpoint = strings.TrimSpace(os.Getenv("SHIELD_REST_ENDPOINT"))
+	RestEndpoint = strings.TrimSpace(os.Getenv("FRONTIER_REST_ENDPOINT"))
 )
 
 type contextKey struct {
@@ -38,17 +38,17 @@ type AuthHandler struct {
 	resourceControlStore map[ResourcePath]ResourceControlFunc
 
 	ctx           context.Context
-	shieldHost    *url.URL
+	frontierHost  *url.URL
 	httpClient    pkg.HTTPClient
 	denyByDefault bool
-	jwkCache      pkg.ShieldJWKCache
+	jwkCache      pkg.FrontierJWKCache
 }
 
-// WithRESTEndpoint provides url for shield server
+// WithRESTEndpoint provides url for frontier server
 // For e.g. http://localhost:7400
 func WithRESTEndpoint(endpoint *url.URL) func(*AuthHandler) {
 	return func(ensureAuth *AuthHandler) {
-		ensureAuth.shieldHost = endpoint
+		ensureAuth.frontierHost = endpoint
 	}
 }
 
@@ -70,7 +70,7 @@ func WithAuthzAllowByDefault() func(*AuthHandler) {
 	}
 }
 
-func WithJWKSetCache(jwkSetCache pkg.ShieldJWKCache) func(*AuthHandler) {
+func WithJWKSetCache(jwkSetCache pkg.FrontierJWKCache) func(*AuthHandler) {
 	return func(ensureAuth *AuthHandler) {
 		ensureAuth.jwkCache = jwkSetCache
 	}
@@ -80,7 +80,7 @@ func WithJWKSetCache(jwkSetCache pkg.ShieldJWKCache) func(*AuthHandler) {
 // checks all incoming requests for valid authorization.
 // WithAuthorization is done using either user json web token in
 // WithAuthorization header or session cookies.
-// Add this middleware on routes that needs to be protected via Shield
+// Add this middleware on routes that needs to be protected via Frontier
 func NewAuthHandler(opts ...func(auth *AuthHandler)) (*AuthHandler, error) {
 	var hostURL *url.URL
 	if len(RestEndpoint) > 0 {
@@ -94,7 +94,7 @@ func NewAuthHandler(opts ...func(auth *AuthHandler)) (*AuthHandler, error) {
 	ea := &AuthHandler{
 		ctx:                  context.Background(),
 		resourceControlStore: map[ResourcePath]ResourceControlFunc{},
-		shieldHost:           hostURL,
+		frontierHost:         hostURL,
 		httpClient:           http.DefaultClient,
 		denyByDefault:        true,
 	}
@@ -103,14 +103,14 @@ func NewAuthHandler(opts ...func(auth *AuthHandler)) (*AuthHandler, error) {
 	}
 
 	// ensure base configurations are set
-	if len(ea.shieldHost.Host) == 0 {
+	if len(ea.frontierHost.Host) == 0 {
 		return nil, pkg.ErrMissingHost
 	}
 	if ea.jwkCache == nil {
-		shieldJWKsURL := fmt.Sprintf("%s/%s", ea.shieldHost, pkg.JWKSAccessPath)
+		frontierJWKsURL := fmt.Sprintf("%s/%s", ea.frontierHost, pkg.JWKSAccessPath)
 
 		// note that by default refreshes only happen very 15 minutes at the earliest.
-		ea.jwkCache = pkg.NewJWKCacheForURL(shieldJWKsURL, ea.ctx)
+		ea.jwkCache = pkg.NewJWKCacheForURL(frontierJWKsURL, ea.ctx)
 		if err := ea.jwkCache.Register(jwk.WithHTTPClient(ea.httpClient)); err != nil {
 			return nil, err
 		}
@@ -125,7 +125,7 @@ func (ea *AuthHandler) WithAuthentication(base http.Handler) http.HandlerFunc {
 			http.Error(w, fmt.Errorf("%s: %w", pkg.ErrJWKsFetch, err).Error(), http.StatusUnauthorized)
 			return
 		}
-		user, claims, token, err := pkg.GetAuthenticatedUser(r, ea.httpClient, ea.shieldHost, keySet)
+		user, claims, token, err := pkg.GetAuthenticatedUser(r, ea.httpClient, ea.frontierHost, keySet)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
